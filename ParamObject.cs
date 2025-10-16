@@ -1,5 +1,7 @@
 ﻿// Copyright (c) 2025 rk0exn All rights reserved.
-// DWM_Run v1.0
+// DWM_Run v1.1
+
+using System;
 
 public sealed class ParamObject
 {
@@ -12,7 +14,7 @@ public sealed class ParamObject
 		if (a.Length != 2)
 		{
 			Program.ShowHelpInternal(true);
-			System.Environment.Exit(1);
+			Environment.Exit(1);
 			return;
 		}
 		Name = a[0];

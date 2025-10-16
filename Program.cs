@@ -1,10 +1,11 @@
 ﻿// Copyright (c) 2025 rk0exn All rights reserved.
-// DWM_Run v1.0
+// DWM_Run v1.1
 
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 
 internal static class Program
 {
@@ -30,7 +31,7 @@ internal static class Program
 
 	static void Main(string[] args)
 	{
-		Console.WriteLine("DWM_Run v1.0 Copyright (c) 2025 rk0exn All rights reserved.\n");
+		Console.WriteLine("DWM_Run v1.1 Copyright (c) 2025 rk0exn All rights reserved.\n");
 		if (args.Length < 1)
 		{
 			ShowHelp();
@@ -130,7 +131,7 @@ internal static class Program
 	{
 		if (args.Length == 0) return false;
 
-		System.Text.RegularExpressions.Regex r = new("^/[A-Za-z]+:[a-zA-Z0-9]+$", System.Text.RegularExpressions.RegexOptions.Compiled);
+		Regex r = new("^/[A-Za-z]+:[a-zA-Z0-9]+$", RegexOptions.Compiled);
 		foreach (var arg in args)
 		{
 			if (!r.IsMatch(arg)) return false;

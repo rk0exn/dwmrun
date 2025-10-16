@@ -1,5 +1,8 @@
 ﻿// Copyright (c) 2025 rk0exn All rights reserved.
-// DWM_Run v1.0
+// DWM_Run v1.1
+
+using System;
+using System.Globalization;
 
 public sealed class ColorObject
 {
@@ -14,7 +17,7 @@ public sealed class ColorObject
 		if (hexColor.Length is not 6 and not 8)
 		{
 			Program.ShowHelpInternal(true);
-			System.Environment.Exit(1);
+			Environment.Exit(1);
 			return;
 		}
 		try
@@ -39,13 +42,13 @@ public sealed class ColorObject
 		catch
 		{
 			Program.ShowHelpInternal(true);
-			System.Environment.Exit(1);
+			Environment.Exit(1);
 			return;
 		}
 	}
 
 	private byte ParseInternal(string s, int si, int len)
 	{
-		return new ByteObject(s.Substring(si, len), System.Globalization.NumberStyles.HexNumber).Value;
+		return new ByteObject(s.Substring(si, len), NumberStyles.HexNumber).Value;
 	}
 }

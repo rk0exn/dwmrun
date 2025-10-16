@@ -1,5 +1,7 @@
 ﻿// Copyright (c) 2025 rk0exn All rights reserved.
-// DWM_Run v1.0
+// DWM_Run v1.1
+
+using System;
 
 public sealed class Int32Object
 {
@@ -14,7 +16,7 @@ public sealed class Int32Object
 		else
 		{
 			Program.ShowHelpInternal(true);
-			System.Environment.Exit(1);
+			Environment.Exit(1);
 			return;
 		}
 	}
