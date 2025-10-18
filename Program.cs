@@ -1,9 +1,11 @@
-﻿// Copyright (c) 2025 rk0exn All rights reserved.
-// DWM_Run v1.4
+// Copyright (c) 2025 rk0exn All rights reserved.
+// DWM_Run v1.5
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.RegularExpressions;
 
 internal static class Program
@@ -13,6 +15,9 @@ internal static class Program
 
 	[DllImport("dwmapi.dll")]
 	private static extern int DwmSetWindowAttribute(nint hwnd, int dwAttribute, ref uint pvAttribute, int cbAttribute);
+
+	[DllImport("user32.dll", CharSet = CharSet.Unicode)]
+	private static extern int GetClassName(nint hWnd, StringBuilder lpClassName, int nMaxCount);
 
 	[DllImport("user32.dll")]
 	[return: MarshalAs(UnmanagedType.Bool)]
@@ -37,14 +42,11 @@ internal static class Program
 	[return: MarshalAs(UnmanagedType.Bool)]
 	private static extern bool IsWindowVisible(nint hWnd);
 
-	[DllImport("uxtheme.dll", CharSet = CharSet.Unicode)]
-	private static extern int SetWindowTheme(nint hwnd, string pszSubAppName, string pszSubIdList);
-
 	private delegate bool EnumWindowsProc(nint hwnd, nint lParam);
 
 	static void Main(string[] args)
 	{
-		Console.WriteLine("DWM_Run v1.4 Copyright (c) 2025 rk0exn All rights reserved.\n");
+		Console.WriteLine("DWM_Run v1.5 Copyright (c) 2025 rk0exn All rights reserved.\n");
 		if (args.Length < 1)
 		{
 			ShowHelp();
@@ -132,22 +134,24 @@ internal static class Program
 
 	private static void ApplyDwmRecursive(nint hwnd, bool dark, uint color, HashSet<nint> visited)
 	{
-		Queue<nint> queue = new();
-		queue.Enqueue(hwnd);
+		Queue<(nint hwnd, int depth)> queue = new();
+		queue.Enqueue((hwnd, 0));
 
 		while (queue.Count > 0)
 		{
-			nint current = queue.Dequeue();
-
+			var (current, depth) = queue.Dequeue();
 			if (visited.Contains(current)) continue;
-
 			visited.Add(current);
+			bool isVisible = IsWindowVisible(current);
+			if (depth > 0 && !isVisible) continue;
+			string className = GetWindowClassName(current);
+			if (IsCommonControl(className)) continue;
+
 			int useDark = dark ? 1 : 0;
 			int hr1 = DwmSetWindowAttribute(current, 20, ref useDark, sizeof(int));
 			int hr2 = DwmSetWindowAttribute(current, 35, ref color, sizeof(uint));
-			int hr3 = SetWindowTheme(current, dark ? "DarkMode_Explorer" : "Explorer", null);
 
-			if (hr1 == 0 && hr2 == 0 && hr3 == 0)
+			if (hr1 == 0 && hr2 == 0)
 			{
 				Console.WriteLine($"  - 適用: HWND=0x{current:X} dark={dark} Native_COLORREF={color:X}");
 			}
@@ -158,10 +162,30 @@ internal static class Program
 
 			EnumChildWindows(current, (child, lparam) =>
 			{
-				queue.Enqueue(child);
+				queue.Enqueue((child, depth + 1));
 				return true;
 			}, 0);
 		}
+	}
+
+	private static string GetWindowClassName(nint hwnd)
+	{
+		StringBuilder sb = new(256);
+		GetClassName(hwnd, sb, sb.Capacity);
+		return sb.ToString();
+	}
+
+	private static bool IsCommonControl(string className)
+	{
+		return className.ToLower() switch
+		{
+			"button" or "edit" or "static" or "listbox" or "combobox" or
+			"scrollbar" or "syslistview32" or "systreeview32" or "systabcontrol32" or
+			"tooltips_class32" or "msctls_statusbar32" or "msctls_trackbar32" or
+			"msctls_updown32" or "msctls_progress32" or "richedit" or "richedit20a" or
+			"richedit20w" or "richedit50w" => true,
+			_ => false
+		};
 	}
 
 	private static bool IsValidParameterName(ParamObject paramObject)
