@@ -1,5 +1,5 @@
 ﻿// Copyright (c) 2025 rk0exn All rights reserved.
-// DWM_Run v1.2
+// DWM_Run v1.3
 
 using System;
 using System.Collections.Generic;
@@ -38,11 +38,14 @@ internal static class Program
 	[return: MarshalAs(UnmanagedType.Bool)]
 	private static extern bool IsWindowVisible(nint hWnd);
 
+	[DllImport("uxtheme.dll", CharSet = CharSet.Unicode)]
+	private static extern int SetWindowTheme(nint hwnd, string pszSubAppName, string pszSubIdList);
+
 	private delegate bool EnumWindowsProc(nint hwnd, nint lParam);
 
 	static void Main(string[] args)
 	{
-		Console.WriteLine("DWM_Run v1.2 Copyright (c) 2025 rk0exn All rights reserved.\n");
+		Console.WriteLine("DWM_Run v1.3 Copyright (c) 2025 rk0exn All rights reserved.\n");
 		if (args.Length < 1)
 		{
 			ShowHelp();
@@ -143,8 +146,9 @@ internal static class Program
 			int useDark = dark ? 1 : 0;
 			int hr1 = DwmSetWindowAttribute(current, 20, ref useDark, sizeof(int));
 			int hr2 = DwmSetWindowAttribute(current, 35, ref color, sizeof(uint));
+			int hr3 = SetWindowTheme(current, "DarkMode_Explorer", null);
 
-			if (hr1 == 0 && hr2 == 0)
+			if (hr1 == 0 && hr2 == 0 && hr3 == 0)
 			{
 				Console.WriteLine($"  - 適用: HWND=0x{current:X} dark={dark} Native_COLORREF={color:X}");
 			}
