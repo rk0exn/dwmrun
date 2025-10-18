@@ -1,5 +1,5 @@
-// Copyright (c) 2025 rk0exn All rights reserved.
-// DWM_Run v1.0
+﻿// Copyright (c) 2025 rk0exn All rights reserved.
+// DWM_Run v1.2
 
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -13,5 +13,5 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyCulture("")]
 [assembly: ComVisible(false)]
 [assembly: Guid("0ff692b5-ef71-45c9-9c84-5633b0c89a6f")]
-[assembly: AssemblyVersion("1.1.0.0")]
-[assembly: AssemblyFileVersion("1.1.0.0")]
+[assembly: AssemblyVersion("1.2.0.0")]
+[assembly: AssemblyFileVersion("1.2.0.0")]
