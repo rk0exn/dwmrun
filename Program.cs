@@ -1,6 +1,5 @@
 ﻿// Copyright (c) 2025 rk0exn All rights reserved.
-// DWM_Run v1.3
-
+// DWM_Run v1.4
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -45,7 +44,7 @@ internal static class Program
 
 	static void Main(string[] args)
 	{
-		Console.WriteLine("DWM_Run v1.3 Copyright (c) 2025 rk0exn All rights reserved.\n");
+		Console.WriteLine("DWM_Run v1.4 Copyright (c) 2025 rk0exn All rights reserved.\n");
 		if (args.Length < 1)
 		{
 			ShowHelp();
@@ -140,13 +139,13 @@ internal static class Program
 		{
 			nint current = queue.Dequeue();
 
-			if (!IsWindow(current) || visited.Contains(current)) continue;
+			if (visited.Contains(current)) continue;
 
 			visited.Add(current);
 			int useDark = dark ? 1 : 0;
 			int hr1 = DwmSetWindowAttribute(current, 20, ref useDark, sizeof(int));
 			int hr2 = DwmSetWindowAttribute(current, 35, ref color, sizeof(uint));
-			int hr3 = SetWindowTheme(current, "DarkMode_Explorer", null);
+			int hr3 = SetWindowTheme(current, dark ? "DarkMode_Explorer" : "Explorer", null);
 
 			if (hr1 == 0 && hr2 == 0 && hr3 == 0)
 			{
