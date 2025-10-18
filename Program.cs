@@ -1,5 +1,5 @@
 ﻿// Copyright (c) 2025 rk0exn All rights reserved.
-// DWM_Run v1.1
+// DWM_Run v1.2
 
 using System;
 using System.Collections.Generic;
@@ -17,7 +17,18 @@ internal static class Program
 
 	[DllImport("user32.dll")]
 	[return: MarshalAs(UnmanagedType.Bool)]
+	private static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, nint lParam);
+
+	[DllImport("user32.dll")]
+	[return: MarshalAs(UnmanagedType.Bool)]
 	private static extern bool EnumChildWindows(nint hwndParent, EnumWindowsProc lpEnumFunc, nint lParam);
+
+	[DllImport("user32.dll")]
+	[return: MarshalAs(UnmanagedType.Bool)]
+	private static extern bool EnumThreadWindows(uint dwThreadId, EnumWindowsProc lpfn, nint lParam);
+
+	[DllImport("user32.dll")]
+	private static extern uint GetWindowThreadProcessId(nint hWnd, out uint lpdwProcessId);
 
 	[DllImport("user32.dll")]
 	[return: MarshalAs(UnmanagedType.Bool)]
@@ -31,7 +42,7 @@ internal static class Program
 
 	static void Main(string[] args)
 	{
-		Console.WriteLine("DWM_Run v1.1 Copyright (c) 2025 rk0exn All rights reserved.\n");
+		Console.WriteLine("DWM_Run v1.2 Copyright (c) 2025 rk0exn All rights reserved.\n");
 		if (args.Length < 1)
 		{
 			ShowHelp();
@@ -88,38 +99,66 @@ internal static class Program
 	private static void Execute(int pid, bool dark, uint color)
 	{
 		Process p = Process.GetProcessById(pid);
-		if ((nint)p.MainWindowHandle != 0)
+		HashSet<nint> visited = [];
+
+		Console.WriteLine($"[PID={pid}] プロセス内の全ウィンドウを検索中...");
+
+		foreach (ProcessThread thread in p.Threads)
 		{
-			var handle = p.MainWindowHandle;
-			Console.WriteLine($"[PID={pid}] メインウィンドウ: 0x{handle:X}");
-			HashSet<nint> visited = [];
-			ApplyDwmRecursive(handle, dark, color, visited);
+			EnumThreadWindows((uint)thread.Id, (hwnd, lparam) =>
+			{
+				if (!visited.Contains(hwnd))
+				{
+					ApplyDwmRecursive(hwnd, dark, color, visited);
+				}
+				return true;
+			}, 0);
 		}
-		else
+
+		EnumWindows((hwnd, lparam) =>
 		{
-			Console.WriteLine($"PID {pid} のメインウィンドウが見つかりません。");
-		}
+			GetWindowThreadProcessId(hwnd, out uint windowPid);
+			if (windowPid == pid && !visited.Contains(hwnd))
+			{
+				ApplyDwmRecursive(hwnd, dark, color, visited);
+			}
+			return true;
+		}, 0);
+
+		Console.WriteLine($"適用完了: {visited.Count} 個のウィンドウを処理しました。");
 	}
 
 	private static void ApplyDwmRecursive(nint hwnd, bool dark, uint color, HashSet<nint> visited)
 	{
-		if (!IsWindow(hwnd) || visited.Contains(hwnd)) return;
+		Queue<nint> queue = new();
+		queue.Enqueue(hwnd);
 
-		visited.Add(hwnd);
-		int useDark = dark ? 1 : 0;
-		int hr1 = DwmSetWindowAttribute(hwnd, 20, ref useDark, sizeof(int));
-		int hr2 = DwmSetWindowAttribute(hwnd, 35, ref color, sizeof(uint));
-
-		if (hr1 == 0 && hr2 == 0)
+		while (queue.Count > 0)
 		{
-			Console.WriteLine($"  - 適用: HWND=0x{hwnd:X} dark={dark}");
+			nint current = queue.Dequeue();
+
+			if (!IsWindow(current) || visited.Contains(current)) continue;
+
+			visited.Add(current);
+			int useDark = dark ? 1 : 0;
+			int hr1 = DwmSetWindowAttribute(current, 20, ref useDark, sizeof(int));
+			int hr2 = DwmSetWindowAttribute(current, 35, ref color, sizeof(uint));
+
+			if (hr1 == 0 && hr2 == 0)
+			{
+				Console.WriteLine($"  - 適用: HWND=0x{current:X} dark={dark} Native_COLORREF={color:X}");
+			}
+			else
+			{
+				Console.WriteLine($"  - 適用失敗: HWND=0x{current:X} dark={dark} Native_COLORREF={color:X}");
+			}
+
+			EnumChildWindows(current, (child, lparam) =>
+			{
+				queue.Enqueue(child);
+				return true;
+			}, 0);
 		}
-
-		EnumChildWindows(hwnd, (child, lparam) =>
-		{
-			ApplyDwmRecursive(child, dark, color, visited);
-			return true;
-		}, 0);
 	}
 
 	private static bool IsValidParameterName(ParamObject paramObject)
@@ -149,8 +188,8 @@ internal static class Program
 		Console.WriteLine();
 		Console.WriteLine("引数:");
 		Console.WriteLine("  /pid:<プロセスID>  対象のプロセスIDを指定します。これはメインウィンドウにのみ反映されます。");
-		Console.WriteLine("  /dark:<true|false>  タイトルバーのテーマを変更します。");
-		Console.WriteLine("  /color:<RGB値|ARGB値>  タイトルバーの色を変更します。この値を指定するとdarkは無視されます。");
+		Console.WriteLine("  /dark:<true(t) | false(f)>  タイトルバーのテーマを変更します。");
+		Console.WriteLine("  /color:<RGB値(6桁) | ARGB値(8桁)>  タイトルバーの色を変更します。この値を指定するとdarkは無視されます。");
 		Console.WriteLine("※colorにFFFFFFFFを設定するか、pidとdarkのみ指定するとデフォルト色にリセットされます。");
 	}
 }
